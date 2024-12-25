@@ -1,46 +1,61 @@
 ---
 - name: Preapre all hosts
   hosts: all
+  become: true
   tasks:
     - name: Create group
-      become: true
       group:
         name: "{{ user_group }}"
         state: present
     - name: Create user
-      become: true
       user:
         name: "{{ user_name }}"
         generate_ssh_key: true
       register: ssh_key_info
-    - name: Install JDK
+    
+    - name: Install JDK11
       become: true
       package:
         name: "{{ java_packages }}"
         state: present
 
+    - name: Get JDK17
+      get_url:
+        url: "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
+        dest: "/tmp"
+
+    - name: Extract JDK17
+      unarchive:
+        src: "/tmp/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
+        dest: "/opt"
+        remote_src: true
+
+    - name: Create symbolic link for JDK17
+      file:
+        src: /opt/jdk-17.0.6+10/bin/java
+        dest: /usr/bin/java
+        state: link
+        force: yes
+
 - name: Get Jenkins master installed
+  become: true
   hosts: jenkins_masters
   tasks:
     - name: Get repo Jenkins
-      become: true
       get_url:
         url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
         dest: /etc/yum.repos.d/jenkins.repo
         validate_certs: false
     - name: Add Jenkins key
-      become: true
       rpm_key:
         key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
         state: present
         validate_certs: false
     - name: Install epel-release
-      become: true
       yum:
         name: epel-release
         state: present
     - name: Install Jenkins and requirements
-      become: true
       yum:
         name:
           - jenkins
@@ -48,7 +63,6 @@
         state: present
       register: jenkins_installed
     - name: Ensure jenkins agents are present in known_hosts file
-      become: true
       become_user: "{{ jenkins_user_name }}"
       known_hosts:
         name: "{{ hostvars[item].ansible_host }}"
@@ -57,7 +71,6 @@
         hash_host: true
       with_items: "{{ groups.jenkins_agents }}"
     - name: Start Jenkins
-      become: true
       systemd:
         name: jenkins
         state: restarted
