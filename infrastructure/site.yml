@@ -14,28 +14,64 @@
       register: ssh_key_info
     
     - name: Install JDK17
-      become: true
       package:
         name: "{{ java_packages }}"
         state: present
+    
+    - name: Install requirements for Python 3.13.1
+      apt:
+        update_cache: yes
+        name:
+          - build-essential
+          - libssl-dev
+          - libffi-dev
+          - zlib1g-dev
+          - libbz2-dev
+          - libreadline-dev
+          - libsqlite3-dev
+          - wget
+          - curl
+          - llvm
+          - libgdbm-dev
+          - liblzma-dev
+          - python3-openssl
+          - python3-pip
+          - pkg-config
+          - git
+          - ca-certificates
+        state: present
 
-    # - name: Get JDK17
-    #   get_url:
-    #     url: "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
-    #     dest: "/tmp"
+      - name: Get Python 3.13.1
+        get_url:
+          url: "https://www.python.org/ftp/python/3.13.1/Python-3.13.1.tgz"
+          dest: "/tmp/"
 
-    # - name: Extract JDK17
-    #   unarchive:
-    #     src: "/tmp/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
-    #     dest: "/opt"
-    #     remote_src: true
+      - name: Extract Python 3.13.1
+        unarchive:
+          src: "/tmp/Python-3.13.1.tgz"
+          dest: "/tmp/"
+          remote_src: true
 
-    # - name: Create symbolic link for JDK17
-    #   file:
-    #     src: /opt/jdk-17.0.6+10/bin/java
-    #     dest: /usr/bin/java
-    #     state: link
-    #     force: yes
+      - name: Extract Python 3.13.1
+        unarchive:
+          src: "/tmp/Python-3.13.1.tgz"
+          dest: "/tmp/Python-3.13.1"
+          remote_src: true
+
+      - name: Configure Python 3.13.1
+        command: "./configure --prefix=/usr --enable-optimizations --with-ensurepip=install"
+        args:
+          chdir: /tmp/Python-3.13.1
+
+      - name: Build Python 3.13.1
+        command: "make -j $(nproc)"
+        args:
+          chdir: /tmp/Python-3.13.1
+
+      - name: Install Python 3.13.1
+        command: "make install"
+        args:
+          chdir: /tmp/Python-3.13.1
 
 - name: Get Jenkins master installed
   become: true
@@ -52,12 +88,11 @@
         dest: "/etc/apt/sources.list.d/"
         mode: 0755
 
-    - name: Install Jenkins and requirements
+    - name: Install Jenkins
       apt:
         update_cache: yes
         name:
           - jenkins
-          - git
         state: present
       register: jenkins_installed
 
@@ -94,19 +129,6 @@
         state: directory
         owner: "{{ jenkins_user_name }}"
         group: "{{ jenkins_user_group }}"
-
-    - name: Install some required
-      become_user: root
-      apt:
-        update_cache: yes
-        name:
-          - git
-          - python3
-          - ca-certificates
-          - curl
-          - python3-pip
-          # - ansible
-        state: present
 
     - name: Create docker keyrings dir
       become_user: root
@@ -152,8 +174,9 @@
         executable: pip3
         name:
           - selinux
-          - ansible<3.0
+          - ansible==9.13.0
           - molecule
+          - molecule_docker
         state: present
 
     - name: Reinstall Selinux
