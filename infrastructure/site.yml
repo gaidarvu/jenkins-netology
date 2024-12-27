@@ -13,73 +13,74 @@
         generate_ssh_key: true
       register: ssh_key_info
     
-    - name: Install JDK11
+    - name: Install JDK17
       become: true
       package:
         name: "{{ java_packages }}"
         state: present
 
-    - name: Get JDK17
-      get_url:
-        url: "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
-        dest: "/tmp"
+    # - name: Get JDK17
+    #   get_url:
+    #     url: "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
+    #     dest: "/tmp"
 
-    - name: Extract JDK17
-      unarchive:
-        src: "/tmp/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
-        dest: "/opt"
-        remote_src: true
+    # - name: Extract JDK17
+    #   unarchive:
+    #     src: "/tmp/OpenJDK17U-jdk_x64_linux_hotspot_17.0.6_10.tar.gz"
+    #     dest: "/opt"
+    #     remote_src: true
 
-    - name: Create symbolic link for JDK17
-      file:
-        src: /opt/jdk-17.0.6+10/bin/java
-        dest: /usr/bin/java
-        state: link
-        force: yes
+    # - name: Create symbolic link for JDK17
+    #   file:
+    #     src: /opt/jdk-17.0.6+10/bin/java
+    #     dest: /usr/bin/java
+    #     state: link
+    #     force: yes
 
 - name: Get Jenkins master installed
   become: true
   hosts: jenkins_masters
   tasks:
-    - name: Get repo Jenkins
+    - name: Get repo key Jenkins
       get_url:
-        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-        dest: /etc/yum.repos.d/jenkins.repo
-        validate_certs: false
-    - name: Add Jenkins key
-      rpm_key:
-        key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-        state: present
-        validate_certs: false
-    - name: Install epel-release
-      yum:
-        name: epel-release
-        state: present
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        dest: /usr/share/keyrings/jenkins-keyring.asc
+
+    - name: Copy repo Jenkins
+      copy:
+        src: "./files/jenkins.list"
+        dest: "/etc/apt/sources.list.d/"
+        mode: 0755
+
     - name: Install Jenkins and requirements
-      yum:
+      apt:
+        update_cache: yes
         name:
           - jenkins
           - git
         state: present
       register: jenkins_installed
+
     - name: Ensure jenkins agents are present in known_hosts file
-      become_user: "{{ jenkins_user_name }}"
+      become_user: root #"{{ jenkins_user_name }}"
       known_hosts:
         name: "{{ hostvars[item].ansible_host }}"
         state: present
         key: "{{ lookup('pipe', 'ssh-keyscan {{ hostvars[item].ansible_host }}') }}"
         hash_host: true
       with_items: "{{ groups.jenkins_agents }}"
+
     - name: Start Jenkins
       systemd:
         name: jenkins
         state: restarted
         enabled: true
       when: jenkins_installed is changed
+
 - name: Prepare jenkins agent
   hosts: jenkins_agents
   become: true
-  become_user: "{{ jenkins_user_name }}"
+  become_user: root #"{{ jenkins_user_name }}"
   tasks:
     - name: Add master publickey into authorized_key
       authorized_key:
@@ -93,22 +94,52 @@
         state: directory
         owner: "{{ jenkins_user_name }}"
         group: "{{ jenkins_user_group }}"
-    - name: Add docker repo
-      become_user: root
-      get_url:
-        url: https://download.docker.com/linux/centos/docker-ce.repo
-        dest: /etc/yum.repos.d/docker-ce.repo
-        validate_certs: false
+
     - name: Install some required
       become_user: root
-      yum:
+      apt:
+        update_cache: yes
         name:
           - git
           - python3
+          - ca-certificates
+          - curl
+          - python3-pip
+          # - ansible
+        state: present
+
+    - name: Create docker keyrings dir
+      become_user: root
+      file:
+        path: "/etc/apt/keyrings"
+        state: directory
+        mode: 0755
+
+    - name: Add docker gpg-key
+      become_user: root
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: 0644
+
+    - name: Copy repo Docker
+      template:
+        src: "./files/docker.list.jq"
+        dest: "/etc/apt/sources.list.d/docker.list"
+        mode: 0755
+
+    - name: Install docker
+      become_user: root
+      apt:
+        update_cache: yes
+        name:
           - docker-ce
           - docker-ce-cli
           - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
         state: present
+
     - name: Update pip
       become_user: root
       pip:
@@ -122,7 +153,9 @@
         name:
           - selinux
           - ansible<3.0
+          - molecule
         state: present
+
     - name: Reinstall Selinux
       become_user: root
       pip:
@@ -130,6 +163,7 @@
         name:
           - selinux
         state: forcereinstall
+
     - name: Add local to PATH
       lineinfile:
         dest: ~/.bashrc

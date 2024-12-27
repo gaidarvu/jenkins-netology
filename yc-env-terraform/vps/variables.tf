@@ -30,30 +30,30 @@ variable "each_vm" {
     os_family=string
     }))
   default = {
-    "jenkins-master" = {
-      platform_id="standard-v2"
-      vm_name="jenkins-master"
-      cpu=2
-      ram=4
-      core_fraction=5
-      type="network-hdd"
-      disk_volume=10
-      network_interface=true
-      scheduling_policy=true
-      os_family="fd86t5b1o1dujno51lmc"
-    }
-    "jenkins-agent" = {
-      platform_id="standard-v2"
-      vm_name="jenkins-agent"
-      cpu=2
-      ram=4
-      core_fraction=5
-      type="network-hdd"
-      disk_volume=10
-      network_interface=true
-      scheduling_policy=true
-      os_family="fd86t5b1o1dujno51lmc"
-    }
+    # "centos7-01" = {
+    #   platform_id="standard-v2"
+    #   vm_name="jenkins-master"
+    #   cpu=2
+    #   ram=4
+    #   core_fraction=5
+    #   type="network-hdd"
+    #   disk_volume=10
+    #   network_interface=true
+    #   scheduling_policy=true
+    #   os_family="fd86t5b1o1dujno51lmc"
+    # }
+    # "centos7-02" = {
+    #   platform_id="standard-v2"
+    #   vm_name="jenkins-agent"
+    #   cpu=2
+    #   ram=4
+    #   core_fraction=5
+    #   type="network-hdd"
+    #   disk_volume=10
+    #   network_interface=true
+    #   scheduling_policy=true
+    #   os_family="fd86t5b1o1dujno51lmc"
+    # }
     # "fedora" = {
     #   platform_id="standard-v2"
     #   vm_name="fedora"
@@ -66,17 +66,29 @@ variable "each_vm" {
     #   scheduling_policy=true
     #   os_family="fd89sn80q3auso2rionh"
     # }
-    # "ubuntu" = {
-    #   platform_id="standard-v2"
-    #   vm_name="ubuntu-2004-lts"
-    #   cpu=2
-    #   ram=1
-    #   core_fraction=5
-    #   type="network-hdd"
-    #   disk_volume=10
-    #   network_interface=true
-    #   scheduling_policy=true
-    #   os_family="fd8chrq89mmk8tqm85r8" 
-    # }
+    "ubuntu-2004-lts-01" = {
+      platform_id="standard-v2"
+      vm_name="jenkins-master"
+      cpu=2
+      ram=1
+      core_fraction=5
+      type="network-hdd"
+      disk_volume=10
+      network_interface=true
+      scheduling_policy=true
+      os_family="fd8t2ccfn663i9i46u1v" 
+    }
+    "ubuntu-2004-lts-02" = {
+      platform_id="standard-v2"
+      vm_name="jenkins-agent"
+      cpu=2
+      ram=1
+      core_fraction=5
+      type="network-hdd"
+      disk_volume=10
+      network_interface=true
+      scheduling_policy=true
+      os_family="fd8t2ccfn663i9i46u1v" 
+    }
   }
 }
