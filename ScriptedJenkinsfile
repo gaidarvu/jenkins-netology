@@ -1,0 +1,19 @@
+node("linux"){
+    stage("Git checkout"){
+        git credentialsId: '85e65033-db98-4fa1-bb79-43e0cb618561', url: 'git@github.com:gaidarvu/ansible-netology.git', branch: 'hw-ansible-05'
+    }
+    stage("Sample define secret_check"){
+        secret_check=true
+    }
+    stage("Run playbook"){
+        if (secret_check){
+            dir('hw-ansible-02/playbook/roles/vector') {
+                sh 'molecule test'
+                }
+        }
+        else{
+            echo 'need more action'
+        }
+        
+    }
+}

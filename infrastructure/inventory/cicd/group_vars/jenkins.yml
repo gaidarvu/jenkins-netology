@@ -5,5 +5,4 @@ jenkins_user_name: jenkins
 jenkins_user_group: jenkins
 java_packages:
   - openjdk-17-jre-headless
-  # - java-11-openjdk
 jenkins_agent_dir: /opt/jenkins_agent/

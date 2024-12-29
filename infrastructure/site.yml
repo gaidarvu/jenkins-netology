@@ -18,22 +18,12 @@
         name: "{{ java_packages }}"
         state: present
     
-    - name: Install requirements for Python 3.13.1
+    - name: Install requirements
       apt:
         update_cache: yes
         name:
-          - build-essential
-          - libssl-dev
-          - libffi-dev
-          - zlib1g-dev
-          - libbz2-dev
-          - libreadline-dev
-          - libsqlite3-dev
           - wget
           - curl
-          - llvm
-          - libgdbm-dev
-          - liblzma-dev
           - python3-openssl
           - python3-pip
           - pkg-config
@@ -41,40 +31,7 @@
           - ca-certificates
         state: present
 
-      - name: Get Python 3.13.1
-        get_url:
-          url: "https://www.python.org/ftp/python/3.13.1/Python-3.13.1.tgz"
-          dest: "/tmp/"
-
-      - name: Extract Python 3.13.1
-        unarchive:
-          src: "/tmp/Python-3.13.1.tgz"
-          dest: "/tmp/"
-          remote_src: true
-
-      - name: Extract Python 3.13.1
-        unarchive:
-          src: "/tmp/Python-3.13.1.tgz"
-          dest: "/tmp/Python-3.13.1"
-          remote_src: true
-
-      - name: Configure Python 3.13.1
-        command: "./configure --prefix=/usr --enable-optimizations --with-ensurepip=install"
-        args:
-          chdir: /tmp/Python-3.13.1
-
-      - name: Build Python 3.13.1
-        command: "make -j $(nproc)"
-        args:
-          chdir: /tmp/Python-3.13.1
-
-      - name: Install Python 3.13.1
-        command: "make install"
-        args:
-          chdir: /tmp/Python-3.13.1
-
 - name: Get Jenkins master installed
-  become: true
   hosts: jenkins_masters
   tasks:
     - name: Get repo key Jenkins
@@ -89,6 +46,7 @@
         mode: 0755
 
     - name: Install Jenkins
+      become: true
       apt:
         update_cache: yes
         name:
@@ -97,7 +55,7 @@
       register: jenkins_installed
 
     - name: Ensure jenkins agents are present in known_hosts file
-      become_user: root #"{{ jenkins_user_name }}"
+      become_user: "{{ jenkins_user_name }}"
       known_hosts:
         name: "{{ hostvars[item].ansible_host }}"
         state: present
@@ -105,7 +63,16 @@
         hash_host: true
       with_items: "{{ groups.jenkins_agents }}"
 
+    - name: Ensure github.com are present in known_hosts file
+      become_user: "{{ jenkins_user_name }}"
+      known_hosts:
+        name: "github.com"
+        state: present
+        key: "{{ lookup('pipe', 'ssh-keyscan github.com') }}"
+        hash_host: true
+
     - name: Start Jenkins
+      become: true
       systemd:
         name: jenkins
         state: restarted
@@ -115,13 +82,15 @@
 - name: Prepare jenkins agent
   hosts: jenkins_agents
   become: true
-  become_user: root #"{{ jenkins_user_name }}"
   tasks:
+
     - name: Add master publickey into authorized_key
+      become_user: root
       authorized_key:
         user: "{{ jenkins_user_name }}"
         state: present
         key: "{{ hostvars['jenkins-master-01']['ssh_key_info']['ssh_public_key'] }}"
+
     - name: Create agent_dir
       become_user: root
       file:
@@ -145,6 +114,7 @@
         mode: 0644
 
     - name: Copy repo Docker
+      become_user: root
       template:
         src: "./files/docker.list.jq"
         dest: "/etc/apt/sources.list.d/docker.list"
@@ -168,13 +138,14 @@
         executable: pip3
         name: pip
         extra_args: --upgrade
+
     - name: Install Ansible
       become_user: root
       pip:
         executable: pip3
         name:
           - selinux
-          - ansible==9.13.0
+          - ansible #==9.13.0
           - molecule
           - molecule_docker
         state: present

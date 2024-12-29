@@ -2,9 +2,11 @@
 
 ## Подготовка к выполнению
 
-Пришлось переписывать роль для Ubuntu 20.04
+Пришлось переписывать роль для Ubuntu 22.04
 
-CentOS совсем стал плох. Вроде всё развернул, java обновил, но с питоном там беда
+Для выполнения задания был использован Jenkins 2.479.2
+
+CentOS совсем стал плох. Вроде всё развернул, java обновил, но с питоном беда
 
 ## Основная часть
 
@@ -54,9 +56,30 @@ CentOS совсем стал плох. Вроде всё развернул, jav
 
 [Declarative Pipeline](Jenkinsfile)
 
-4. Создать Multibranch Pipeline на запуск `Jenkinsfile` из репозитория.
-5. Создать Scripted Pipeline, наполнить его скриптом из [pipeline](./pipeline).
-6. Внести необходимые изменения, чтобы Pipeline запускал `ansible-playbook` без флагов `--check --diff`, если не установлен параметр при запуске джобы (prod_run = True). По умолчанию параметр имеет значение False и запускает прогон с флагами `--check --diff`.
-7. Проверить работоспособность, исправить ошибки, исправленный Pipeline вложить в репозиторий в файл `ScriptedJenkinsfile`.
-8. Отправить ссылку на репозиторий с ролью и Declarative Pipeline и Scripted Pipeline.
-9. Сопроводите процесс настройки скриншотами для каждого пункта задания!!
+4. Создать Multibranch Pipeline.
+
+Было немного непонятно, но полагаю что выполнение одновременно нескольких пайплайнов это и есть мультибранч пайплайн. у меня получилось вот так:
+
+![alt text](multibranch.png)
+
+5. Создать Scripted Pipeline.
+
+Создание
+
+![alt text](<scripted make.png>)
+
+Выполнение пайплайна и консоль
+
+![alt text](<scripted console.png>)
+
+Результат
+
+![alt text](<scripted result.png>)
+
+Скрипт для Multibranch Pipeline пришлось переделать под свою репу в github и выполнить molecule test, поскольку для предложеной репы в файле нужен был ssh-key...
+
+[Скрипт для Multibranch Pipeline](ScriptedJenkinsfile)
+
+[Репозиторий, который был взят для пайплайна](https://github.com/gaidarvu/ansible-netology/tree/hw-ansible-05)
+
+[Репозиторий, в котором лежит переделанная роль для jenkins и скрипты для пайплайнов](https://github.com/gaidarvu/jenkins-netology)

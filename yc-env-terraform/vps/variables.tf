@@ -66,7 +66,7 @@ variable "each_vm" {
     #   scheduling_policy=true
     #   os_family="fd89sn80q3auso2rionh"
     # }
-    "ubuntu-2004-lts-01" = {
+    "ubuntu-2204-lts-01" = {
       platform_id="standard-v2"
       vm_name="jenkins-master"
       cpu=2
@@ -76,9 +76,9 @@ variable "each_vm" {
       disk_volume=10
       network_interface=true
       scheduling_policy=true
-      os_family="fd8t2ccfn663i9i46u1v" 
+      os_family="fd857s9nlophtetqniuu" 
     }
-    "ubuntu-2004-lts-02" = {
+    "ubuntu-2204-lts-02" = {
       platform_id="standard-v2"
       vm_name="jenkins-agent"
       cpu=2
@@ -88,7 +88,7 @@ variable "each_vm" {
       disk_volume=10
       network_interface=true
       scheduling_policy=true
-      os_family="fd8t2ccfn663i9i46u1v" 
+      os_family="fd857s9nlophtetqniuu" 
     }
   }
 }
