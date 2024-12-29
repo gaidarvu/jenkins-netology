@@ -54,7 +54,7 @@ CentOS совсем стал плох. Вроде всё развернул, jav
 
 3. Declarative Pipeline в репозитории в файле `Jenkinsfile`.
 
-[Declarative Pipeline](Jenkinsfile)
+[Файл Declarative Pipeline](Jenkinsfile)
 
 4. Создать Multibranch Pipeline.
 
